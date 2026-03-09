@@ -6,7 +6,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
 <style>
+
 body{
 font-family:Arial;
 background:#0f172a;
@@ -16,7 +20,7 @@ padding:20px;
 }
 
 .container{
-max-width:1000px;
+max-width:1100px;
 margin:auto;
 }
 
@@ -62,6 +66,14 @@ cursor:pointer;
 button:hover{
 background:#16a34a;
 }
+
+#calendar{
+background:white;
+color:black;
+border-radius:10px;
+padding:10px;
+}
+
 </style>
 </head>
 
@@ -93,6 +105,22 @@ background:#16a34a;
 </select>
 
 <button onclick="adicionarAposta()">Adicionar</button>
+
+</div>
+
+<div class="card">
+
+<h3>Controle diário</h3>
+
+<input type="number" id="metaDiaria" placeholder="Meta diária">
+
+<input type="number" id="stopLoss" placeholder="Stop loss diário">
+
+<button onclick="salvarControle()">Salvar</button>
+
+<p>Lucro hoje: <span id="lucroHoje">0</span></p>
+
+<p>Status: <span id="statusDia">Sem dados</span></p>
 
 </div>
 
@@ -128,20 +156,45 @@ background:#16a34a;
 
 </div>
 
+<div class="card">
+
+<h3>Calendário de resultados</h3>
+
+<div id="calendar"></div>
+
+</div>
+
 </div>
 
 <script>
 
-let bancaInicial = localStorage.getItem("bancaInicial") || 0
+let bancaInicial = Number(localStorage.getItem("bancaInicial")) || 0
 let apostas = JSON.parse(localStorage.getItem("apostas")) || []
 
+let metaDiaria = Number(localStorage.getItem("metaDiaria")) || 0
+let stopLoss = Number(localStorage.getItem("stopLoss")) || 0
+
 document.getElementById("bancaInicial").value = bancaInicial
+document.getElementById("metaDiaria").value = metaDiaria
+document.getElementById("stopLoss").value = stopLoss
 
 function salvarBanca(){
 
 bancaInicial = Number(document.getElementById("bancaInicial").value)
 
 localStorage.setItem("bancaInicial", bancaInicial)
+
+render()
+
+}
+
+function salvarControle(){
+
+metaDiaria = Number(document.getElementById("metaDiaria").value)
+stopLoss = Number(document.getElementById("stopLoss").value)
+
+localStorage.setItem("metaDiaria", metaDiaria)
+localStorage.setItem("stopLoss", stopLoss)
 
 render()
 
@@ -163,11 +216,9 @@ render()
 
 function calcular(){
 
-let banca = Number(bancaInicial)
-
+let banca = bancaInicial
 let totalInvestido = 0
 let wins = 0
-
 let historico = [banca]
 
 apostas.forEach(aposta=>{
@@ -213,6 +264,22 @@ document.getElementById("lucro").innerText = dados.lucro.toFixed(2)
 document.getElementById("roi").innerText = dados.roi.toFixed(2)+"%"
 document.getElementById("winrate").innerText = dados.winrate.toFixed(2)+"%"
 
+document.getElementById("lucroHoje").innerText = dados.lucro.toFixed(2)
+
+if(dados.lucro >= metaDiaria){
+
+document.getElementById("statusDia").innerText = "Meta batida ✅"
+
+}else if(dados.lucro <= -stopLoss){
+
+document.getElementById("statusDia").innerText = "Stop loss atingido 🛑"
+
+}else{
+
+document.getElementById("statusDia").innerText = "Operando"
+
+}
+
 if(chart){
 chart.destroy()
 }
@@ -242,6 +309,38 @@ borderWidth:3
 }
 
 render()
+
+document.addEventListener('DOMContentLoaded', function () {
+
+let calendarEl = document.getElementById('calendar');
+
+let calendar = new FullCalendar.Calendar(calendarEl, {
+
+initialView: 'dayGridMonth',
+
+dateClick: function(info) {
+
+let valor = prompt("Lucro ou prejuízo do dia:");
+
+if(valor){
+
+calendar.addEvent({
+
+title: "R$ " + valor,
+
+start: info.dateStr
+
+})
+
+}
+
+}
+
+});
+
+calendar.render();
+
+});
 
 </script>
 
